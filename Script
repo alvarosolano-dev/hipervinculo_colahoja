@@ -1,0 +1,58 @@
+Sub CrearHipervinculosHojas()
+    Dim wsHojaActual As Worksheet
+    Dim celda As Range
+    Dim rangoColumna As Range
+    Dim nombreHoja As String
+    Dim hojaDestino As Worksheet
+    Dim ultimaFila As Long
+    Dim columnaSeleccionada As Integer
+    Dim respuesta As VbMsgBoxResult
+
+    ' 1. Configurar la hoja activa
+    Set wsHojaActual = ActiveSheet
+
+    ' Preguntar en qué columna están los nombres de las hojas (por ejemplo: 1 para A, 2 para B, etc.)
+    On Error Resume Next
+    columnaSeleccionada = InputBox("Ingresa el número de la columna donde tienes los nombres de las hojas:" & vbCrLf & _
+                                   "(Ejemplo: 1 para la columna A, 2 para la B, 3 para la C...)", "Crear Hipervínculos", 1)
+    On Error GoTo 0
+
+    If columnaSeleccionada = 0 Then Exit Sub
+
+    ' Encontrar la última fila con datos en esa columna
+    ultimaFila = wsHojaActual.Cells(wsHojaActual.Rows.Count, columnaSeleccionada).End(xlUp).Row
+
+    If ultimaFila < 1 Then
+        MsgBox "No se encontraron datos en la columna seleccionada.", vbExclamation, "Aviso"
+        Exit Sub
+    End If
+
+    ' Definir el rango a recorrer (desde la fila 1 hasta la última con datos)
+    Set rangoColumna = wsHojaActual.Range(wsHojaActual.Cells(1, columnaSeleccionada), wsHojaActual.Cells(ultimaFila, columnaSeleccionada))
+
+    ' 2. Recorrer cada celda y asignar el hipervínculo si la hoja existe
+    For Each celda In rangoColumna
+        nombreHoja = Trim(celda.Value)
+        
+        If nombreHoja <> "" Then
+            ' Comprobar si la hoja existe en el libro
+            On Error Resume Next
+            Set hojaDestino = ThisWorkbook.Sheets(nombreHoja)
+            On Error GoTo 0
+
+            If Not hojaDestino Is Nothing Then
+                ' Crear el hipervínculo interno a la celda A1 de esa hoja
+                wsHojaActual.Hyperlinks.Add Anchor:=celda, _
+                                            Address:="", _
+                                            SubAddress:="'" & nombreHoja & "'!A1", _
+                                            TextToDisplay:=nombreHoja, _
+                                            ScreenTip:="Ir a la hoja " & nombreHoja
+            End If
+            
+            ' Limpiar la variable para la siguiente iteración
+            Set hojaDestino = Nothing
+        End If
+    Next celda
+
+    MsgBox "¡Hipervínculos creados con éxito en la columna " & columnaSeleccionada & "!", vbInformation, "Proceso Finalizado"
+End Sub
